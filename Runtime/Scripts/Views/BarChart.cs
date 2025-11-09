@@ -3,6 +3,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using Xeon.XGraph.Manager;
 using Xeon.XGraph.Model;
+#if UNITY_EDITOR
+using UnityEditor;
+using Xeon.XGraph.Editor;
+#endif
 
 namespace Xeon.XGraph.View
 {
@@ -125,6 +129,17 @@ namespace Xeon.XGraph.View
 
             geometryDirty = false;
         }
+
+#if UNITY_EDITOR
+        private const string MenuName = "Bar Chart";
+        private const int MenuPriority = ChartMenuUtility.MenuPriorityRoot + 0;
+
+        [MenuItem(ChartMenuUtility.MenuRoot + MenuName, false, MenuPriority)]
+        private static void Create(MenuCommand menuCommand)
+        {
+            ChartMenuUtility.CreateChart<BarChart>(MenuName, menuCommand);
+        }
+#endif
 
         private float ValueToHeight(float value, out bool isInRange)
         {

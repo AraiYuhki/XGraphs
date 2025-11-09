@@ -3,6 +3,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using Xeon.XGraph.Manager;
 using Xeon.XGraph.Model;
+#if UNITY_EDITOR
+using UnityEditor;
+using Xeon.XGraph.Editor;
+#endif
 
 namespace Xeon.XGraph.View
 {
@@ -164,6 +168,17 @@ namespace Xeon.XGraph.View
 
             geometryDirty = false;
         }
+
+#if UNITY_EDITOR
+        private const string MenuName = "Stacked Bar Chart";
+        private const int MenuPriority = ChartMenuUtility.MenuPriorityRoot + 5;
+
+        [MenuItem(ChartMenuUtility.MenuRoot + MenuName, false, MenuPriority)]
+        private static void Create(MenuCommand menuCommand)
+        {
+            ChartMenuUtility.CreateChart<StackedBarChart>(MenuName, menuCommand);
+        }
+#endif
 
         protected override void OnEnable()
         {
