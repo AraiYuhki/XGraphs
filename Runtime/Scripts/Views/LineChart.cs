@@ -2,6 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Xeon.XGraph.Model;
+#if UNITY_EDITOR
+using UnityEditor;
+using Xeon.XGraph.Editor;
+#endif
 
 namespace Xeon.XGraph.View
 {
@@ -93,6 +97,17 @@ namespace Xeon.XGraph.View
             if (vertices != null && indices != null && vertices.Count > 0 && indices.Count > 0)
                 vh.AddUIVertexStream(vertices, indices);
         }
+
+#if UNITY_EDITOR
+        private const string MenuName = "Line Chart";
+        private const int MenuPriority = ChartMenuUtility.MenuPriorityRoot + 1;
+
+        [MenuItem(ChartMenuUtility.MenuRoot + MenuName, false, MenuPriority)]
+        private static void Create(MenuCommand menuCommand)
+        {
+            ChartMenuUtility.CreateChart<LineChart>(MenuName, menuCommand);
+        }
+#endif
 
         private int GetDataCount()
         {

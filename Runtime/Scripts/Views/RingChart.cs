@@ -3,6 +3,10 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using Xeon.XGraph.Model;
+#if UNITY_EDITOR
+using UnityEditor;
+using Xeon.XGraph.Editor;
+#endif
 
 namespace Xeon.XGraph.View
 {
@@ -41,6 +45,17 @@ namespace Xeon.XGraph.View
             }
             vh.AddUIVertexStream(vertices, indices);
         }
+
+#if UNITY_EDITOR
+        private const string MenuName = "Ring Chart";
+        private const int MenuPriority = ChartMenuUtility.MenuPriorityRoot + 4;
+
+        [MenuItem(ChartMenuUtility.MenuRoot + MenuName, false, MenuPriority)]
+        private static void Create(MenuCommand menuCommand)
+        {
+            ChartMenuUtility.CreateChart<RingChart>(MenuName, menuCommand);
+        }
+#endif
 
         protected override void OnChangedColor()
         {
