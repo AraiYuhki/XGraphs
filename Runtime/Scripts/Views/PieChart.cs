@@ -45,6 +45,15 @@ namespace Xeon.XGraph.View
         }
 #endif
 
+        public void Initialize(List<SingleValueSeries> data)
+        {
+            this.data = data.ToArray();
+            InitializeSeries(this.data);
+            RecalculateColors();
+            geometryDirty = true;
+            SetVerticesDirty();
+        }
+
         public void SetData(params SingleValueSeries[] data)
         {
             FinalizeSeries(this.data);

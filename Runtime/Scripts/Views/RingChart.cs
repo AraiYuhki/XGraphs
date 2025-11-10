@@ -23,6 +23,30 @@ namespace Xeon.XGraph.View
         private List<UIVertex> vertices = new();
         private List<int> indices = new();
 
+        public void Initialize(LayeredSeries data)
+        {
+            this.data = data;
+            this.data.RecalculateColors(color);
+            data.OnChangedValue += ChangedValue;
+            geometryDirty = true;
+        }
+
+        public void SetData(LayeredSeries newData)
+        {
+            data.OnChangedValue -= ChangedValue;
+            data = newData;
+            data.OnChangedValue += ChangedValue;
+            data.RecalculateColors(color);
+            geometryDirty = true;
+            SetVerticesDirty();
+        }
+
+        private void ChangedValue()
+        {
+            geometryDirty = true;
+            SetVerticesDirty();
+        }
+
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();

@@ -214,8 +214,6 @@ namespace Xeon.XGraph.View
         protected override void OnValidate()
         {
             base.OnValidate();
-            var size = Mathf.Min(rectTransform.sizeDelta.x, rectTransform.sizeDelta.y);
-            rectTransform.sizeDelta = Vector2.one * size;
             if (Application.isPlaying)
                 return;
             markerManager.Initialize(ValueToHeight);

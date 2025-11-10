@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using Xeon.Common.FlyweightScrollView;
+using System.Linq;
 
-namespace Xeon.Common
+namespace Xeon.XGraph.Model
 {
     public class CircularBuffer<T> : IObservableCollection<T>, IReadOnlyList<T>
     {
@@ -70,13 +70,21 @@ namespace Xeon.Common
             end = copyCount % Capacity;
         }
 
-        public CircularBuffer(int capacity)
+        public CircularBuffer(int capacity, bool fill = false)
         {
             if (capacity < 1)
                 throw new ArgumentException("容量は1以上でなければなりません。", nameof(capacity));
-
-            buffer = new T[capacity];
-            Count = 0;
+            if (fill)
+            {
+                buffer = Enumerable.Repeat<T>(default, capacity).ToArray();
+                Count = Capacity;
+                end = buffer.Length / Capacity;
+            }
+            else
+            {
+                buffer = new T[capacity];
+                Count = 0;
+            }
             start = 0;
             end = 0;
         }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Xeon.Common
+namespace Xeon.XGraph.Model
 {
     public class DoubleCircularBuffer : CircularBuffer<double>
     {

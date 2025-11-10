@@ -10,8 +10,8 @@ namespace Xeon.XGraph.Editor
 {
     internal static class ChartMenuUtility
     {
-        internal const string MenuRoot = "GameObject/Create/UI/XGraphs/";
-        internal const int MenuPriorityRoot = 10;
+        internal const string MenuRoot = "GameObject/UI/XGraphs/";
+        internal const int MenuPriorityRoot = 20;
 
         private const float DefaultWidth = 400f;
         private const float DefaultHeight = 300f;
