@@ -18,7 +18,7 @@ namespace Xeon.XGraph.View
     {
         [SerializeField] private RangeValue range = new(0f, 100f);
         [SerializeField] private float spacing = 0f;
-        [SerializeField] private MarkerManager markerManager = new();
+        [SerializeField] private ScaleMarkerManager markerManager = new();
         [SerializeField] private MultiValueSeries buffer = new ();
         
         private bool rangeDirty = false;
@@ -46,7 +46,7 @@ namespace Xeon.XGraph.View
             }
         }
 
-        public MarkerManager MarkerManager => markerManager;
+        public ScaleMarkerManager MarkerManager => markerManager;
         
         public void Initialize(MultiValueSeries buffer)
         {

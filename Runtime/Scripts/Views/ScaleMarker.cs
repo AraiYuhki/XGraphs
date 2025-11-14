@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace Xeon.Common
 {
     [Serializable]
-    public class BarGraphMarkerData
+    public class ScaleMarkerData
     {
         [SerializeField]
         private string label;
@@ -16,14 +16,14 @@ namespace Xeon.Common
         public string Label => label;
         public float Value => value;
 
-        public BarGraphMarkerData(string label, float value)
+        public ScaleMarkerData(string label, float value)
         {
             this.label = label;
             this.value = value;
         }
     }
 
-    public class BarGraphMarker : MonoBehaviour
+    public class ScaleMarker : MonoBehaviour
     {
         [SerializeField]
         private TMP_Text label;
@@ -41,8 +41,8 @@ namespace Xeon.Common
         private Color labelBgColor = new Color(1f, 1f, 1f, 0.5f);
 
         [SerializeField]
-        private BarGraphMarkerData data;
-        public BarGraphMarkerData Data 
+        private ScaleMarkerData data;
+        public ScaleMarkerData Data 
         {
             get => data;
             set
