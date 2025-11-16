@@ -57,6 +57,7 @@ namespace Xeon.XGraph.View
             range.Max = max;
             rangeDirty = true;
             geometryDirty = true;
+            markerManager.UpdateMarkers();
             SetVerticesDirty();
         }
 
@@ -65,6 +66,7 @@ namespace Xeon.XGraph.View
             range.Min = min;
             rangeDirty = true;
             geometryDirty = true;
+            markerManager.UpdateMarkers();
             SetVerticesDirty();
         }
 
@@ -210,16 +212,7 @@ namespace Xeon.XGraph.View
                 for (var dataIndex = 0; dataIndex < dataCount; dataIndex++)
                 {
                     var value = series[dataIndex];
-                    float yPosition;
-                    if (hasRange)
-                    {
-                        yPosition = Mathf.Lerp(yMin, yMax, range.Normalized(value));
-                    }
-                    else
-                    {
-                        yPosition = mid;
-                    }
-
+                    float yPosition = ValueToHeight(value, out _);
                     normalizedValues[legendIndex, dataIndex] = yPosition;
                 }
             }
@@ -456,23 +449,19 @@ namespace Xeon.XGraph.View
             rangeDirty = false;
         }
 
+        private float FastValueToHeight(float value)
+        {
+            if (rangeDirty)
+                RecalculateRange();
+            if (scale == 0f)
+                return rectTransform.rect.yMin + padding.bottom + halfWidth;
+            return baseY + value * scale;
+        }
+
         private float ValueToHeight(float value, out bool isInRange)
         {
-            var height = range.Range;
-            var rect = rectTransform.rect;
-            var yMin = rect.yMin + padding.bottom + halfWidth;
-            var yMax = rect.yMax - padding.top - halfWidth;
-            var hasRange = !Mathf.Approximately(height, 0f);
-            var mid = (yMin + yMax) * 0.5f;
-            isInRange = yMin <= value && value <= yMax;
-            if (hasRange)
-            {
-                return Mathf.Lerp(yMin, yMax, range.Normalized(value));
-            }
-            else
-            {
-                return mid;
-            }
+            isInRange = range.InRange(value);
+            return FastValueToHeight(value);
         }
 
         protected override void OnRectTransformDimensionsChange()
