@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Xeon.XGraph.Controller;
 using Xeon.XGraph.Model;
 
 namespace Xeon.XGraph.View
@@ -11,6 +12,7 @@ namespace Xeon.XGraph.View
     public abstract class ChartBase : MaskableGraphic
     {
         [SerializeField] protected RectOffset padding = new();
+        [SerializeField] protected LegendListView legendListView;
 
         protected bool geometryDirty = false;
 
@@ -62,6 +64,15 @@ namespace Xeon.XGraph.View
                 InitializeSeries(s);
         }
 
+        protected void InitializeSeries(MultiLegendSeries series)
+        {
+            if (series == null)
+                return;
+            FinalizeSeries(series);
+            foreach (var s in series)
+                InitializeSeries(s);
+        }
+
         protected void InitializeSeries(SingleValueSeries[] series)
         {
             if (series == null)
@@ -75,6 +86,14 @@ namespace Xeon.XGraph.View
             }
         }
 
+        protected void InitializeSeries(SingleValueSeries series)
+        {
+            if (series == null)
+                return;
+            series.OnChangedValue += OnChangedCollection;
+            series.OnChangedColor += OnChangedColor;
+        }
+
         protected void FinalizeSeries(Series series)
         {
             if (series == null)
@@ -84,15 +103,28 @@ namespace Xeon.XGraph.View
             series.OnChangedColor -= OnChangedColor;
         }
 
+        protected void FinalizeSeries(MultiLegendSeries series)
+        {
+            if (series == null)
+                return;
+            foreach (var s in series)
+                FinalizeSeries(s);
+        }
+
         protected void FinalizeSeries(SingleValueSeries[] series)
         {
             if (series == null)
                 return;
             foreach (var s in series)
-            {
-                s.OnChangedValue -= OnChangedCollection;
-                s.OnChangedColor -= OnChangedColor;
-            }
+                FinalizeSeries(s);
+        }
+
+        protected void FinalizeSeries(SingleValueSeries series)
+        {
+            if (series == null)
+                return;
+            series.OnChangedValue -= OnChangedCollection;
+            series.OnChangedColor -= OnChangedColor;
         }
 
         protected void FinalizeSeries(MultiValueSeries series)

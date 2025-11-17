@@ -29,6 +29,8 @@ namespace Xeon.XGraph.View
             this.data.RecalculateColors(color);
             data.OnChangedValue += ChangedValue;
             geometryDirty = true;
+            if (legendListView != null)
+                legendListView.Setup(data.GetLegends());
         }
 
         public void SetData(LayeredSeries newData)
@@ -39,6 +41,8 @@ namespace Xeon.XGraph.View
             data.RecalculateColors(color);
             geometryDirty = true;
             SetVerticesDirty();
+            if (legendListView != null)
+                legendListView.Setup(data.GetLegends());
         }
 
         private void ChangedValue()

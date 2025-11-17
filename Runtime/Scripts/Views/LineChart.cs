@@ -50,6 +50,8 @@ namespace Xeon.XGraph.View
             rangeDirty = true;
             markerManager.Initialize(ValueToHeight);
             SetSeries(series);
+            if (legendListView != null)
+                legendListView.Setup(buffer.GetLegends());
         }
 
         public void SetMax(float max)

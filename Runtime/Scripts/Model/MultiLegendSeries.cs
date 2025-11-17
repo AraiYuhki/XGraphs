@@ -98,6 +98,8 @@ namespace Xeon.XGraph.Model
 
         private void ChangedColor() => onChangedColor?.Invoke();
 
+        public List<Legend> GetLegends() => series.Select(series => new Legend(series)).ToList();
+
         public IEnumerator<SingleValueSeries> GetEnumerator()
         {
             foreach (var s in this.series)

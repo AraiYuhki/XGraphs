@@ -19,7 +19,7 @@ namespace Xeon.XGraph.View
         private const float StartAngleOffset = 90f;
 
         [SerializeField, Range(0f, 359f)] private float startAngle = 0f;
-        [SerializeField] private SingleValueSeries[] data = new SingleValueSeries[0];
+        [SerializeField] private MultiLegendSeries data = new();
 
         private Color[] preMultipliedColors = new Color[0];
         private List<UIVertex> vertices = new();
@@ -45,23 +45,27 @@ namespace Xeon.XGraph.View
         }
 #endif
 
-        public void Initialize(List<SingleValueSeries> data)
+        public void Initialize(MultiLegendSeries data)
         {
-            this.data = data.ToArray();
-            InitializeSeries(this.data);
-            RecalculateColors();
-            geometryDirty = true;
-            SetVerticesDirty();
-        }
-
-        public void SetData(params SingleValueSeries[] data)
-        {
-            FinalizeSeries(this.data);
             this.data = data;
             InitializeSeries(this.data);
             RecalculateColors();
             geometryDirty = true;
             SetVerticesDirty();
+            if (legendListView != null)
+                legendListView.Setup(data.Select(sereis => new Legend(sereis)).Distinct().ToList());
+        }
+
+        public void SetData(params SingleValueSeries[] data)
+        {
+            FinalizeSeries(this.data);
+            this.data = new MultiLegendSeries(data);
+            InitializeSeries(this.data);
+            RecalculateColors();
+            geometryDirty = true;
+            SetVerticesDirty();
+            if (legendListView != null)
+                legendListView.Setup(data.Select(sereis => new Legend(sereis)).Distinct().ToList());
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)
@@ -70,7 +74,7 @@ namespace Xeon.XGraph.View
             vertices.Clear();
             indices.Clear();
             
-            if (data == null || data.Length <= 0)
+            if (data == null || data.Count <= 0)
                 return;
             if (!geometryDirty)
                 return;
@@ -80,7 +84,7 @@ namespace Xeon.XGraph.View
             // 12時方向開始に変更 (標準の単位円で 12時は +90°)
             var startAngleDegree = StartAngleOffset - startAngle;
             var startIndex = 0;
-            for (var index = 0; index < data.Length; index++)
+            for (var index = 0; index < data.Count; index++)
             {
                 var value = data[index].Value;
                 var arcAngleDegree = 360f * value / total; // このセグメントの角度(度)
@@ -133,9 +137,9 @@ namespace Xeon.XGraph.View
 
         private void RecalculateColors()
         {
-            if (preMultipliedColors == null || preMultipliedColors.Length != data.Length)
-                preMultipliedColors = new Color[data.Length];
-            for (var index = 0; index < data.Length; index++)
+            if (preMultipliedColors == null || preMultipliedColors.Length != data.Count)
+                preMultipliedColors = new Color[data.Count];
+            for (var index = 0; index < data.Count; index++)
                 preMultipliedColors[index] = data[index].Color * color;
         }
         

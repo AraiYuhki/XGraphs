@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Xeon.XGraph.Model
@@ -7,7 +8,7 @@ namespace Xeon.XGraph.Model
     /// 判例構造体
     /// </summary>
     [Serializable]
-    public struct Legend
+    public struct Legend : IEqualityComparer<Legend>
     {
         [SerializeField] private string name;
         [SerializeField] private Color color;
@@ -25,6 +26,16 @@ namespace Xeon.XGraph.Model
         {
             name = series.Name;
             color = series.Color;
+        }
+
+        public bool Equals(Legend x, Legend y)
+        {
+            return x.name == y.name;
+        }
+
+        public int GetHashCode(Legend obj)
+        {
+            return obj.name.GetHashCode();
         }
     }
 }
