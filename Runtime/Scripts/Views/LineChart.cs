@@ -2,6 +2,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Xeon.XGraph.Model;
+using Xeon.XGraph.Manager;
+using Xeon.Common;
+using UnityEngine.UIElements;
+
+
+
 #if UNITY_EDITOR
 using UnityEditor;
 using Xeon.XGraph.Editor;
@@ -21,28 +27,48 @@ namespace Xeon.XGraph.View
         private RangeValue range = new(0f, 100f);
 
         [SerializeField]
+        private ScaleMarkerManager markerManager = new();
+
+        [SerializeField]
         private MultiValueSeries buffer = new();
 
         private float halfWidth => thicness * 0.5f;
 
         private float[,] normalizedValues = new float[0, 0];
 
+        private bool rangeDirty = false;
+        private float scale = 1f;
+        private float baseY = 0f;
+
         private List<UIVertex> vertices;
         private List<int> indices;
 
-        public void Initialize(MultiValueSeries series) => SetSeries(series);
+        public ScaleMarkerManager MarkerManager => markerManager;
+
+        public void Initialize(MultiValueSeries series)
+        {
+            rangeDirty = true;
+            markerManager.Initialize(ValueToHeight);
+            SetSeries(series);
+            if (legendListView != null)
+                legendListView.Setup(buffer.GetLegends());
+        }
 
         public void SetMax(float max)
         {
             range.Max = max;
+            rangeDirty = true;
             geometryDirty = true;
+            markerManager.UpdateMarkers();
             SetVerticesDirty();
         }
 
         public void SetMin(float min)
         {
             range.Min = min;
+            rangeDirty = true;
             geometryDirty = true;
+            markerManager.UpdateMarkers();
             SetVerticesDirty();
         }
 
@@ -54,18 +80,21 @@ namespace Xeon.XGraph.View
             buffer = newSeries;
             InitializeSeries(buffer);
             buffer?.SetColor(color);
+            rangeDirty = true;
             geometryDirty = true;
             SetVerticesDirty();
         }
 
         protected override void OnEnable()
         {
+            rangeDirty = true;
             buffer?.SetColor(color);
             base.OnEnable();
         }
 
         protected override void OnDisable()
         {
+            rangeDirty = true;
             buffer?.SetColor(color);
             base.OnDisable();
         }
@@ -84,6 +113,9 @@ namespace Xeon.XGraph.View
             var dataCount = GetDataCount();
             if (dataCount <= 1)
                 return;
+
+            if (rangeDirty)
+                RecalculateRange();
 
             EnsureCapacity(legendCount, dataCount);
 
@@ -182,16 +214,7 @@ namespace Xeon.XGraph.View
                 for (var dataIndex = 0; dataIndex < dataCount; dataIndex++)
                 {
                     var value = series[dataIndex];
-                    float yPosition;
-                    if (hasRange)
-                    {
-                        yPosition = Mathf.Lerp(yMin, yMax, range.Normalized(value));
-                    }
-                    else
-                    {
-                        yPosition = mid;
-                    }
-
+                    float yPosition = ValueToHeight(value, out _);
                     normalizedValues[legendIndex, dataIndex] = yPosition;
                 }
             }
@@ -412,11 +435,52 @@ namespace Xeon.XGraph.View
             indices.Add(c);
         }
 
+        private void RecalculateRange()
+        {
+            if (range.IsApproximately)
+            {
+                scale = 0f;
+                baseY = rectTransform.rect.yMin + padding.bottom;
+            }
+            else
+            {
+                var usableHeight = rectTransform.rect.height - padding.vertical;
+                scale = usableHeight / range.Range;
+                baseY = rectTransform.rect.yMin + padding.bottom - range.Min * scale;
+            }
+            rangeDirty = false;
+        }
+
+        private float FastValueToHeight(float value)
+        {
+            if (rangeDirty)
+                RecalculateRange();
+            if (scale == 0f)
+                return rectTransform.rect.yMin + padding.bottom + halfWidth;
+            return baseY + value * scale;
+        }
+
+        private float ValueToHeight(float value, out bool isInRange)
+        {
+            isInRange = range.InRange(value);
+            return FastValueToHeight(value);
+        }
+
+        protected override void OnRectTransformDimensionsChange()
+        {
+            rangeDirty = true;
+            base.OnRectTransformDimensionsChange();
+        }
+
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
+            if (Application.isPlaying)
+                return;
+            markerManager.Initialize(ValueToHeight);
             buffer?.SetColor(color);
+            rangeDirty = true;
         }
 #endif
     }

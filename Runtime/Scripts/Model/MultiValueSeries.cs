@@ -72,6 +72,14 @@ namespace Xeon.XGraph.Model
             return preMultipliedColors[preMultipliedColors.Length - 1];
         }
 
+        public List<Legend> GetLegends()
+        {
+            var result = new List<Legend>();
+            foreach (var series in series)
+                result.Add(new Legend(series));
+            return result;
+        }
+
         public IEnumerator<Series> GetEnumerator()
         {
             foreach (var s in series)

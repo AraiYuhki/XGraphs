@@ -86,6 +86,11 @@ namespace Xeon.XGraph.Model
                 series.RecalculateColors(color);
         }
 
+        public List<Legend> GetLegends()
+        {
+            return buffer.SelectMany(multiValueSeries => multiValueSeries.GetLegends()).Distinct().ToList();
+        }
+
         public IEnumerator<MultiLegendSeries> GetEnumerator()
         {
             foreach (var data in buffer)

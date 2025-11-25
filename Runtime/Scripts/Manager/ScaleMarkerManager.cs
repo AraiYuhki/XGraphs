@@ -10,14 +10,14 @@ using UnityEditor;
 namespace Xeon.XGraph.Manager
 {
     [Serializable]
-    public class MarkerManager
+    public class ScaleMarkerManager
     {
         public delegate float ValueToHeightDelegate(float value, out bool inRange);
         
         [SerializeField] private Transform parent;
-        [SerializeField] private BarGraphMarker markerPrefab;
-        [SerializeField, HideInInspector] private List<BarGraphMarker> markers = new();
-        [SerializeField] private List<BarGraphMarkerData> markerDataList = new();
+        [SerializeField] private ScaleMarker markerPrefab;
+        [SerializeField, HideInInspector] private List<ScaleMarker> markers = new();
+        [SerializeField] private List<ScaleMarkerData> markerDataList = new();
 
         private ValueToHeightDelegate valueToHeight;
 
@@ -26,7 +26,7 @@ namespace Xeon.XGraph.Manager
             this.valueToHeight = valueToHeight;
         }
 
-        public void SetMarkers(List<BarGraphMarkerData> newData)
+        public void SetMarkers(List<ScaleMarkerData> newData)
         {
             if (ReferenceEquals(markerDataList, newData))
                 return;
@@ -37,7 +37,7 @@ namespace Xeon.XGraph.Manager
         
         public void AddMarker(string label, float value)
         {
-            markerDataList.Add(new BarGraphMarkerData(label, value));
+            markerDataList.Add(new ScaleMarkerData(label, value));
             RefreshMarkers();
         }
 
@@ -114,7 +114,7 @@ namespace Xeon.XGraph.Manager
         }
         
 #if UNITY_EDITOR
-        [UnityEditor.CustomPropertyDrawer(typeof(MarkerManager))]
+        [UnityEditor.CustomPropertyDrawer(typeof(ScaleMarkerManager))]
         private class MarkerManagerEditor : UnityEditor.PropertyDrawer
         {
             public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -182,7 +182,7 @@ namespace Xeon.XGraph.Manager
                 Rect rClear = new Rect(rButtons.x + half + 4f, rButtons.y, half, line);
 
                 var owner = property.serializedObject.targetObject;
-                var markerManager = fieldInfo.GetValue(owner) as MarkerManager;
+                var markerManager = fieldInfo.GetValue(owner) as ScaleMarkerManager;
 
                 using (new EditorGUI.DisabledScope(markerManager == null))
                 {
