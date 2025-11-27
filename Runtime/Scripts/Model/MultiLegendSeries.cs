@@ -58,6 +58,13 @@ namespace Xeon.XGraph.Model
                 RegisterEvent(s);
         }
 
+        public MultiLegendSeries(params SingleValueSeries[] series)
+        {
+            this.series = series;
+            foreach (var s in this.series)
+                RegisterEvent(s);
+        }
+
         public void SetData(IEnumerable<SingleValueSeries> series)
         {
             foreach (var s in this.series)

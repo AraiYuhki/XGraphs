@@ -18,6 +18,12 @@ namespace Xeon.XGraph.Manager
         [SerializeField] private ScaleMarker markerPrefab;
         [SerializeField, HideInInspector] private List<ScaleMarker> markers = new();
         [SerializeField] private List<ScaleMarkerData> markerDataList = new();
+        
+        [SerializeField, Tooltip("マーカー間の最小距離（ピクセル）。この距離以下の場合、最小値・最大値を優先して中間値を非表示にします")]
+        private float minMarkerDistance = 30f;
+        
+        [SerializeField, Tooltip("近接マーカーのフィルタリングを有効にする")]
+        private bool enableProximityFiltering = true;
 
         private ValueToHeightDelegate valueToHeight;
 
@@ -57,6 +63,7 @@ namespace Xeon.XGraph.Manager
         
         public void UpdateMarkers()
         {
+            // 位置を更新
             foreach (var marker in markers)
             {
                 if (marker == null || marker.Data == null)
@@ -65,6 +72,12 @@ namespace Xeon.XGraph.Manager
                 position.y = valueToHeight(marker.Data.Value, out var inRange);
                 marker.transform.localPosition = position;
                 marker.gameObject.SetActive(inRange);
+            }
+            
+            // 近接フィルタリングを適用
+            if (enableProximityFiltering)
+            {
+                ApplyProximityFiltering();
             }
         }
 
@@ -111,6 +124,74 @@ namespace Xeon.XGraph.Manager
                 marker.gameObject.SetActive(inRange);
                 markers.Add(marker);
             }
+            
+            // 近接フィルタリングを適用
+            if (enableProximityFiltering && hasDelegate)
+            {
+                ApplyProximityFiltering();
+            }
+        }
+        
+        /// <summary>
+        /// 近接マーカーのフィルタリングを適用
+        /// 最小値・最大値を優先し、中間値は距離が十分ある場合のみ表示
+        /// </summary>
+        private void ApplyProximityFiltering()
+        {
+            if (markers.Count <= 2)
+                return; // 2個以下ならフィルタリング不要
+            
+            // アクティブなマーカーのみを対象にし、値でソート
+            var activeMarkers = markers
+                .Where(m => m != null && m.gameObject.activeSelf)
+                .OrderBy(m => m.Data.Value)
+                .ToList();
+            
+            if (activeMarkers.Count <= 2)
+                return;
+            
+            // 最小値と最大値のインデックス
+            int minIndex = 0;
+            int maxIndex = activeMarkers.Count - 1;
+            
+            // 中間のマーカーをチェック
+            for (int i = 1; i < activeMarkers.Count - 1; i++)
+            {
+                var currentMarker = activeMarkers[i];
+                float currentY = currentMarker.transform.localPosition.y;
+                
+                // 前のアクティブなマーカーを探す
+                float prevY = float.NegativeInfinity;
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (activeMarkers[j].gameObject.activeSelf)
+                    {
+                        prevY = activeMarkers[j].transform.localPosition.y;
+                        break;
+                    }
+                }
+                
+                // 次のアクティブなマーカーを探す
+                float nextY = float.PositiveInfinity;
+                for (int j = i + 1; j < activeMarkers.Count; j++)
+                {
+                    if (activeMarkers[j].gameObject.activeSelf)
+                    {
+                        nextY = activeMarkers[j].transform.localPosition.y;
+                        break;
+                    }
+                }
+                
+                // 前後のマーカーとの距離をチェック
+                float distToPrev = Mathf.Abs(currentY - prevY);
+                float distToNext = Mathf.Abs(nextY - currentY);
+                
+                // どちらかの距離が最小距離以下なら非表示
+                if (distToPrev < minMarkerDistance || distToNext < minMarkerDistance)
+                {
+                    currentMarker.gameObject.SetActive(false);
+                }
+            }
         }
         
 #if UNITY_EDITOR
@@ -126,11 +207,19 @@ namespace Xeon.XGraph.Manager
                 var parentProp = property.FindPropertyRelative("parent");
                 var prefabProp = property.FindPropertyRelative("markerPrefab");
                 var listProp = property.FindPropertyRelative("markerDataList");
+                var enableFilteringProp = property.FindPropertyRelative("enableProximityFiltering");
+                var minDistanceProp = property.FindPropertyRelative("minMarkerDistance");
 
                 float h = 0f;
                 h += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing; // Foldoutヘッダ
                 h += EditorGUI.GetPropertyHeight(parentProp) + EditorGUIUtility.standardVerticalSpacing;
                 h += EditorGUI.GetPropertyHeight(prefabProp) + EditorGUIUtility.standardVerticalSpacing;
+                h += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing; // Header
+                h += EditorGUI.GetPropertyHeight(enableFilteringProp) + EditorGUIUtility.standardVerticalSpacing;
+                if (enableFilteringProp.boolValue)
+                {
+                    h += EditorGUI.GetPropertyHeight(minDistanceProp) + EditorGUIUtility.standardVerticalSpacing;
+                }
                 h += EditorGUI.GetPropertyHeight(listProp) + EditorGUIUtility.standardVerticalSpacing;
                 h += EditorGUIUtility.singleLineHeight; // buttons
                 return h;
@@ -158,6 +247,8 @@ namespace Xeon.XGraph.Manager
                 var parentProp = property.FindPropertyRelative("parent");
                 var prefabProp = property.FindPropertyRelative("markerPrefab");
                 var listProp = property.FindPropertyRelative("markerDataList");
+                var enableFilteringProp = property.FindPropertyRelative("enableProximityFiltering");
+                var minDistanceProp = property.FindPropertyRelative("minMarkerDistance");
 
                 // parent
                 Rect rParent = new Rect(position.x, y, position.width, line);
@@ -168,6 +259,24 @@ namespace Xeon.XGraph.Manager
                 Rect rPrefab = new Rect(position.x, y, position.width, line);
                 EditorGUI.PropertyField(rPrefab, prefabProp);
                 y += line + pad;
+
+                // Header for proximity filtering
+                Rect rHeader = new Rect(position.x, y, position.width, line);
+                EditorGUI.LabelField(rHeader, "マーカー重複制御", EditorStyles.boldLabel);
+                y += line + pad;
+
+                // Enable proximity filtering
+                Rect rEnableFiltering = new Rect(position.x, y, position.width, line);
+                EditorGUI.PropertyField(rEnableFiltering, enableFilteringProp);
+                y += line + pad;
+
+                // Min distance (only if filtering is enabled)
+                if (enableFilteringProp.boolValue)
+                {
+                    Rect rMinDistance = new Rect(position.x, y, position.width, line);
+                    EditorGUI.PropertyField(rMinDistance, minDistanceProp);
+                    y += line + pad;
+                }
 
                 // marker data list
                 float listHeight = EditorGUI.GetPropertyHeight(listProp);

@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using Xeon.Common;
 using Xeon.XGraph.Manager;
 using Xeon.XGraph.Model;
 #if UNITY_EDITOR
@@ -45,13 +47,13 @@ namespace Xeon.XGraph.View
                 base.Color = value;
             }
         }
-
-        public ScaleMarkerManager MarkerManager => markerManager;
         
-        public void Initialize(MultiValueSeries buffer)
+        public void Initialize(MultiValueSeries buffer, List<ScaleMarkerData> markers = null)
         {
             rangeDirty = true;
             markerManager.Initialize(ValueToHeight);
+            if (markers != null)
+                markerManager.SetMarkers(markers);
             SetSeries(buffer);
             if (legendListView != null)
                 legendListView.Setup(buffer.GetLegends());

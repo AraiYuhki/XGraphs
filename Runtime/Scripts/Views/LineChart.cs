@@ -42,13 +42,13 @@ namespace Xeon.XGraph.View
 
         private List<UIVertex> vertices;
         private List<int> indices;
-
-        public ScaleMarkerManager MarkerManager => markerManager;
-
-        public void Initialize(MultiValueSeries series)
+        
+        public void Initialize(MultiValueSeries series, List<ScaleMarkerData> markers = null)
         {
             rangeDirty = true;
             markerManager.Initialize(ValueToHeight);
+            if (markers != null)
+                markerManager.SetMarkers(markers);
             SetSeries(series);
             if (legendListView != null)
                 legendListView.Setup(buffer.GetLegends());
