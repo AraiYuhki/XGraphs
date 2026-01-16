@@ -19,8 +19,8 @@ namespace Xeon.XGraph.View
     public class LineChart : ChartBase
     {
         [SerializeField]
-        private float thicness = 1f;
-        [SerializeField, Tooltip("thicnessの何倍までマイターを許容するか")]
+        private float thickness = 1f;
+        [SerializeField, Tooltip("thicknessの何倍までマイターを許容するか")]
         private float miterLimit = 4f;
 
         [SerializeField]
@@ -32,7 +32,7 @@ namespace Xeon.XGraph.View
         [SerializeField]
         private MultiValueSeries buffer = new();
 
-        private float halfWidth => thicness * 0.5f;
+        private float halfWidth => thickness * 0.5f;
 
         private float[,] normalizedValues = new float[0, 0];
 
@@ -365,7 +365,7 @@ namespace Xeon.XGraph.View
         }
 
         /// <summary>
-        /// 指定したベクトルの邦船を取得する(左に90度回転させる)
+        /// 指定したベクトルの法線を取得する(左に90度回転させる)
         /// </summary>
         /// <param name="vector"></param>
         /// <returns></returns>
