@@ -4,9 +4,6 @@ using UnityEngine.UI;
 using Xeon.XGraph.Model;
 using Xeon.XGraph.Manager;
 using Xeon.Common;
-using UnityEngine.UIElements;
-
-
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -194,29 +191,11 @@ namespace Xeon.XGraph.View
                 normalizedValues = new float[legendCount, dataCount];
             }
 
-            var height = range.Range;
-            var rect = rectTransform.rect;
-            var yMin = rect.yMin + padding.bottom + halfWidth;
-            var yMax = rect.yMax - padding.top - halfWidth;
-
-            if (yMax < yMin)
-            {
-                var center = (yMin + yMax) * 0.5f;
-                yMin = yMax = center;
-            }
-
-            var hasRange = !Mathf.Approximately(height, 0f);
-            var mid = (yMin + yMax) * 0.5f;
-
             for (var legendIndex = 0; legendIndex < legendCount; legendIndex++)
             {
                 var series = buffer[legendIndex];
                 for (var dataIndex = 0; dataIndex < dataCount; dataIndex++)
-                {
-                    var value = series[dataIndex];
-                    float yPosition = ValueToHeight(value, out _);
-                    normalizedValues[legendIndex, dataIndex] = yPosition;
-                }
+                    normalizedValues[legendIndex, dataIndex] = FastValueToHeight(series[dataIndex]);
             }
         }
 
@@ -374,12 +353,11 @@ namespace Xeon.XGraph.View
         /// <summary>
         /// 頂点を一括で追加する
         /// </summary>
-        /// <param name="vh"></param>
-        /// <param name="positions"></param>
-        private void AddVertices(ref UIVertex vert, params Vector2[] positions)
+        /// <remarks>params配列だと毎フレーム大量のGCアロケーションが発生するため固定引数にしている</remarks>
+        private void AddVertices(ref UIVertex vert, Vector2 top, Vector2 bottom)
         {
-            foreach (var position in positions)
-                AddVertex(position, ref vert);
+            AddVertex(top, ref vert);
+            AddVertex(bottom, ref vert);
         }
 
         /// <summary>

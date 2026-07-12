@@ -18,6 +18,8 @@ namespace Xeon.XGraph.Controller
         {
             foreach (var legend in this.legends)
             {
+                if (legend == null)
+                    continue;
                 if (Application.isPlaying)
                     Destroy(legend.gameObject);
                 else

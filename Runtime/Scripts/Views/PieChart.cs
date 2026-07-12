@@ -76,10 +76,11 @@ namespace Xeon.XGraph.View
             
             if (data == null || data.Count <= 0)
                 return;
-            if (!geometryDirty)
-                return;
 
             var total = data.Sum(d => d.Value);
+            // 合計が0以下だと角度計算が0除算でNaNになるため描画しない
+            if (total <= 0f)
+                return;
             var halfRadius = 0.5f * Mathf.Min(rectTransform.rect.width, rectTransform.rect.height);
             // 12時方向開始に変更 (標準の単位円で 12時は +90°)
             var startAngleDegree = StartAngleOffset - startAngle;

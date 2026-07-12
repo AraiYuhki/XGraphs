@@ -5,7 +5,10 @@ namespace Xeon.XGraph.Model
 {
     public class DoubleCircularBuffer : CircularBuffer<double>
     {
-        private SortedSet<double> heap = new();
+        // SortedSetは重複値を保持できないため、値ごとの個数をDictionaryで管理し、
+        // 個数が0になったときだけSortedSetから取り除くマルチセットとして扱う
+        private readonly Dictionary<double, int> counts = new();
+        private readonly SortedSet<double> sortedValues = new();
 
         public DoubleCircularBuffer(int capacity) : base(capacity)
         {
@@ -13,11 +16,11 @@ namespace Xeon.XGraph.Model
 
         public DoubleCircularBuffer(int capacity, double[] items) : base(capacity, items)
         {
-            foreach (var value in items)
-                heap.Add(value);
+            for (var index = 0; index < Count; index++)
+                AddValue(base[index]);
         }
 
-        public double Max => heap.Max;
+        public double Max => sortedValues.Count == 0 ? 0.0 : sortedValues.Max;
 
         public override double this[int index]
         {
@@ -29,55 +32,70 @@ namespace Xeon.XGraph.Model
                 if (index >= Count)
                     throw new IndexOutOfRangeException($"Cannot access index {index}. Buffer size is {Count}.");
 
-                var actualIndex = (start + index) % Capacity;
-                heap.Remove(base[actualIndex]);
-                heap.Add(value);
-                buffer[actualIndex] = value;
+                RemoveValue(base[index]);
+                AddValue(value);
+                base[index] = value;
             }
         }
 
         public override void Clear()
         {
-            heap.Clear();
+            counts.Clear();
+            sortedValues.Clear();
             base.Clear();
         }
 
         public override void PushBack(double item)
         {
-            if (IsEmpty && item > 0)
-            {
-                heap.Add(item);
-            }
-            else
-            {
-                heap.Remove(buffer[end]);
-                heap.Add(item);
-            }
+            if (IsFull)
+                RemoveValue(Front());
+            AddValue(item);
             base.PushBack(item);
         }
 
         public override void PushFront(double item)
         {
-            if (IsEmpty && item > 0)
-                heap.Add(item);
-            else
-            {
-                heap.Remove(buffer[start]);
-                heap.Add(item);
-            }
+            if (IsFull)
+                RemoveValue(Back());
+            AddValue(item);
             base.PushFront(item);
         }
 
         public override void PopBack()
         {
-            heap.Remove(buffer[end]);
+            if (!IsEmpty)
+                RemoveValue(Back());
             base.PopBack();
         }
 
         public override void PopFront()
         {
-            heap.Remove(buffer[start]);
+            if (!IsEmpty)
+                RemoveValue(Front());
             base.PopFront();
+        }
+
+        private void AddValue(double value)
+        {
+            counts.TryGetValue(value, out var count);
+            counts[value] = count + 1;
+            if (count == 0)
+                sortedValues.Add(value);
+        }
+
+        private void RemoveValue(double value)
+        {
+            if (!counts.TryGetValue(value, out var count))
+                return;
+            if (count <= 1)
+            {
+                counts.Remove(value);
+                sortedValues.Remove(value);
+            }
+            else
+            {
+                counts[value] = count - 1;
+            }
         }
     }
 }
