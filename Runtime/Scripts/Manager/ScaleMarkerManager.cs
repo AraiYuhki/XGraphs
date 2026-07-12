@@ -69,9 +69,15 @@ namespace Xeon.XGraph.Manager
                 if (marker == null || marker.Data == null)
                     continue;
                 var position = marker.transform.localPosition;
-                position.y = valueToHeight(marker.Data.Value, out var inRange);
-                marker.transform.localPosition = position;
-                marker.gameObject.SetActive(inRange);
+                var newY = valueToHeight(marker.Data.Value, out var inRange);
+                // 変化がない場合にTransformをダーティにしないようにする
+                if (!Mathf.Approximately(position.y, newY))
+                {
+                    position.y = newY;
+                    marker.transform.localPosition = position;
+                }
+                if (marker.gameObject.activeSelf != inRange)
+                    marker.gameObject.SetActive(inRange);
             }
             
             // 近接フィルタリングを適用

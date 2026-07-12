@@ -56,7 +56,7 @@ namespace Xeon.XGraph.Model
 
         public void SetBuffer(IEnumerable<MultiLegendSeries> newData)
         {
-            foreach (var multiValueSeries in buffer)
+            foreach (var multiValueSeries in buffer ?? Array.Empty<MultiLegendSeries>())
             {
                 foreach (var series in multiValueSeries)
                 {

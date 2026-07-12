@@ -59,8 +59,6 @@ namespace Xeon.XGraph.View
 
             if (data == null || data.Count <= 0)
                 return;
-            if (!geometryDirty)
-                return;
 
             var halfRadius = 0.5f * Mathf.Min(rectTransform.rect.width, rectTransform.rect.height);
             var ringWidth = (halfRadius - this.innerRadius - spacing) / data.Count;
@@ -95,6 +93,9 @@ namespace Xeon.XGraph.View
         {
             var startIndex = 0;
             var total = layer.Sum(series => series.Value);
+            // 合計が0以下だと角度計算が0除算でNaNになるため描画しない
+            if (total <= 0f)
+                return;
             for (var index = 0; index < layer.Count; index++)
             {
                 var value = layer[index].Value;

@@ -67,7 +67,7 @@ namespace Xeon.XGraph.Model
 
         public void SetData(IEnumerable<SingleValueSeries> series)
         {
-            foreach (var s in this.series)
+            foreach (var s in this.series ?? Array.Empty<SingleValueSeries>())
                 UnregisterEvent(s);
             this.series = series.ToArray();
             foreach (var s in this.series)

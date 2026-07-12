@@ -98,9 +98,6 @@ namespace Xeon.XGraph.View
             if (rangeDirty)
                 RecalculateRange();
 
-            if (!geometryDirty)
-                return;
-
             if (buffer.Count <= 0 || buffer.First().Count <= 0)
                 return;
 
@@ -119,16 +116,16 @@ namespace Xeon.XGraph.View
             for (var groupIndex = 0; groupIndex < groupCount; groupIndex++)
             {
                 var groupLeft = contentLeft + groupIndex * (groupWidth + spacing);
-                var segmentColor = buffer.GetSegmentColor(groupIndex, color);
                 for (var legendIndex = 0; legendIndex < legendCount; legendIndex++)
                 {
                     var series = buffer[legendIndex];
                     var left = groupLeft + legendIndex * barWidth;
                     var right = left + barWidth;
-                    var bottom = FastValueToHeight(0f);
-                    var top = FastValueToHeight(series[groupIndex]);
+                    // 範囲外の値がチャート外にはみ出さないようにクランプする
+                    var bottom = FastValueToHeight(Mathf.Clamp(0f, range.Min, range.Max));
+                    var top = FastValueToHeight(Mathf.Clamp(series[groupIndex], range.Min, range.Max));
 
-                    AddQuad(vh, left, right, bottom, top, buffer.GetSegmentColor(legendIndex, segmentColor));
+                    AddQuad(vh, left, right, bottom, top, buffer.GetSegmentColor(legendIndex, color));
                 }
             }
 

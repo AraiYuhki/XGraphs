@@ -136,9 +136,6 @@ namespace Xeon.XGraph.View
             if (rangeDirty)
                 RecalculateRange();
 
-            if (!geometryDirty)
-                return;
-
             var legendCount = buffer.Count;
             var dataCount = buffer.First().Count;
             if (dataCount == 0)
@@ -158,14 +155,13 @@ namespace Xeon.XGraph.View
                 {
                     var value = buffer[legendIndex][dataIndex];
                     if (value == 0f)
-                    {
-                        cumulative += value;
                         continue;
-                    }
 
-                    var bottom = FastValueToHeight(cumulative);
-                    var top = FastValueToHeight(cumulative + value);
-                    AddQuad(vh, left, right, bottom, top, buffer.GetSegmentColor(legendIndex, color));
+                    // 範囲外の値がチャート外にはみ出さないようにクランプする
+                    var bottom = FastValueToHeight(Mathf.Clamp(cumulative, range.Min, range.Max));
+                    var top = FastValueToHeight(Mathf.Clamp(cumulative + value, range.Min, range.Max));
+                    if (!Mathf.Approximately(bottom, top))
+                        AddQuad(vh, left, right, bottom, top, buffer.GetSegmentColor(legendIndex, color));
                     cumulative += value;
                 }
             }
@@ -197,7 +193,7 @@ namespace Xeon.XGraph.View
             base.OnDisable();
         }
 
-        private static void AddQuad(VertexHelper vh, float left, float right, float top, float bottom, Color color)
+        private static void AddQuad(VertexHelper vh, float left, float right, float bottom, float top, Color color)
         {
             var index = vh.currentVertCount;
             var vert = UIVertex.simpleVert;
