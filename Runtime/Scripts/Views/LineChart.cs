@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Xeon.XGraph.Model;
 using Xeon.XGraph.Manager;
+using Xeon.XGraph.Rendering;
 using Xeon.Common;
 
 #if UNITY_EDITOR
@@ -31,7 +32,10 @@ namespace Xeon.XGraph.View
 
         private float halfWidth => thickness * 0.5f;
 
+        private readonly UILineRenderer lineRenderer = new();
+
         private float[,] normalizedValues = new float[0, 0];
+        private Vector2[] pointsBuffer = new Vector2[0];
 
         private bool rangeDirty = false;
         private float scale = 1f;
@@ -174,6 +178,9 @@ namespace Xeon.XGraph.View
             indices ??= new List<int>(indexCapacity);
             if (indices.Capacity < indexCapacity)
                 indices.Capacity = indexCapacity;
+
+            if (pointsBuffer.Length < dataCount)
+                pointsBuffer = new Vector2[dataCount];
         }
 
         private void UpdateNormalizedValues(int legendCount, int dataCount)
@@ -209,55 +216,16 @@ namespace Xeon.XGraph.View
             var contentWidth = Mathf.Max(0f, width);
             var stepX = dataCount <= 1 ? 0f : contentWidth / (dataCount - 1f);
 
+            lineRenderer.Thickness = thickness;
+            lineRenderer.MiterLimit = miterLimit;
+
             for (var legendIndex = 0; legendIndex < legendCount; legendIndex++)
             {
-                var seriesColor = buffer.GetSegmentColor(legendIndex, color);
-                var vert = UIVertex.simpleVert;
-                vert.color = seriesColor;
-
-                var vertexIndex = vertices.Count;
-                var prev = Vector2.zero;
-                var prevBebel = false;
-
                 for (var dataIndex = 0; dataIndex < dataCount; dataIndex++)
-                {
-                    var current = new Vector2(stepX * dataIndex + offsetX, normalizedValues[legendIndex, dataIndex]);
-                    var isBebel = false;
+                    pointsBuffer[dataIndex] = new Vector2(stepX * dataIndex + offsetX, normalizedValues[legendIndex, dataIndex]);
 
-                    if (dataIndex == 0)
-                    {
-                        var nextHeight = normalizedValues[legendIndex, dataIndex + 1];
-                        ProcessStart(stepX, current, nextHeight, ref vert);
-                        prev = current;
-                        continue;
-                    }
-
-                    if (dataIndex == dataCount - 1)
-                    {
-                        ProcessEnd(current, prev, ref vert);
-                        AddTriangle(vertexIndex, vertexIndex + 1, vertexIndex + 2);
-                        AddTriangle(vertexIndex + 2, vertexIndex + 1, vertexIndex + 3);
-                        continue;
-                    }
-
-                    var next = new Vector2(stepX * (dataIndex + 1) + offsetX, normalizedValues[legendIndex, dataIndex + 1]);
-                    var (top, bottom, tmp) = GetJoinVertices(prev, current, next);
-                    AddVertices(ref vert, top, bottom);
-
-                    if (tmp.HasValue)
-                    {
-                        AddVertex(tmp.Value, ref vert);
-                        isBebel = true;
-                    }
-
-                    var diffY = current.y - prev.y;
-
-                    AddTriangles(vertexIndex, diffY, isBebel, prevBebel);
-                    vertexIndex += isBebel ? 3 : 2;
-
-                    prev = current;
-                    prevBebel = isBebel;
-                }
+                var seriesColor = buffer.GetSegmentColor(legendIndex, color);
+                lineRenderer.AddLine(pointsBuffer, dataCount, seriesColor, vertices, indices);
             }
         }
 
@@ -265,152 +233,6 @@ namespace Xeon.XGraph.View
         {
             buffer?.SetColor(color);
             base.OnChangedColor();
-        }
-
-        /// <summary>
-        /// 始点の処理
-        /// </summary>
-        /// <param name="vh"></param>
-        /// <param name="stepX"></param>
-        /// <param name="current"></param>
-        private void ProcessStart(float stepX, Vector2 current, float nextHeight, ref UIVertex vert)
-        {
-            var next = new Vector2(current.x + stepX, nextHeight);
-            var (top, bottom) = GetEndCap(current, next - current);
-            AddVertices(ref vert, top, bottom);
-        }
-
-        /// <summary>
-        /// 終点の処理
-        /// </summary>
-        /// <param name="vh"></param>
-        /// <param name="current"></param>
-        /// <param name="prev"></param>
-        private void ProcessEnd(Vector2 current, Vector2 prev, ref UIVertex vert)
-        {
-            var (top, bottom) = GetEndCap(current, (current - prev));
-            AddVertices(ref vert, top, bottom);
-        }
-
-        /// <summary>
-        /// マイター結合の計算をする(フォールバックはベベル結合)
-        /// </summary>
-        /// <param name="prev"></param>
-        /// <param name="current"></param>
-        /// <param name="next"></param>
-        /// <returns></returns>
-        private (Vector2 top, Vector2 bottom, Vector2? nextTop) GetJoinVertices(Vector2 prev, Vector2 current, Vector2 next)
-        {
-            var prevDirection = (current - prev).normalized;
-            var nextDirection = (next - current).normalized;
-            var prevNormal = GetNormal(prevDirection);
-            var nextNormal = GetNormal(nextDirection);
-
-            var miterDirection = (prevNormal + nextNormal).normalized;
-            var dotToNextNormal = Vector2.Dot(miterDirection, nextNormal);
-
-            if (Mathf.Abs(dotToNextNormal) < float.Epsilon)
-            {
-                return (current + nextNormal * halfWidth, current - nextNormal * halfWidth, null);
-            }
-
-            var miterLength = halfWidth / dotToNextNormal;
-
-            if (Mathf.Abs(miterLength) > (halfWidth * Mathf.Max(1f, miterLimit)))
-            {
-                var currentNormal = prevDirection.y > 0 ? prevNormal : -prevNormal;
-                var top = current + currentNormal * halfWidth;
-                var bottom = current - currentNormal * halfWidth;
-                var diff = top - bottom;
-                diff.x *= -1;
-                var tmp = bottom + diff;
-                var positions = (top, bottom, tmp);
-                return positions;
-            }
-
-            return (current + miterDirection * miterLength, current - miterDirection * miterLength, null);
-        }
-
-        /// <summary>
-        /// 始点と終点の頂点位置の計算を行う
-        /// </summary>
-        /// <param name="point"></param>
-        /// <param name="direction"></param>
-        /// <returns></returns>
-        private (Vector2 top, Vector2 bottom) GetEndCap(Vector2 point, Vector2 direction)
-        {
-            var normal = GetNormal(direction.normalized);
-            return (point + normal * halfWidth, point - normal * halfWidth);
-        }
-
-        /// <summary>
-        /// 指定したベクトルの法線を取得する(左に90度回転させる)
-        /// </summary>
-        /// <param name="vector"></param>
-        /// <returns></returns>
-        private Vector2 GetNormal(Vector2 vector) => new Vector2(-vector.y, vector.x);
-
-        /// <summary>
-        /// 頂点を一括で追加する
-        /// </summary>
-        /// <remarks>params配列だと毎フレーム大量のGCアロケーションが発生するため固定引数にしている</remarks>
-        private void AddVertices(ref UIVertex vert, Vector2 top, Vector2 bottom)
-        {
-            AddVertex(top, ref vert);
-            AddVertex(bottom, ref vert);
-        }
-
-        /// <summary>
-        /// 頂点を追加する
-        /// </summary>
-        /// <param name="vh"></param>
-        /// <param name="position"></param>
-        private void AddVertex(Vector2 position, ref UIVertex vert)
-        {
-            vert.position = new Vector3(position.x, position.y);
-            vertices.Add(vert);
-        }
-
-        /// <summary>
-        /// 面を追加する
-        /// </summary>
-        /// <param name="vh"></param>
-        /// <param name="index"></param>
-        /// <param name="direction"></param>
-        /// <param name="isBebel"></param>
-        /// <param name="prevIsBebel"></param>
-        private void AddTriangles(int index, float diffY, bool isBebel, bool prevIsBebel)
-        {
-            if (isBebel)
-            {
-                AddTriangle(index, index + 1, index + 2);
-                AddTriangle(index + 2, index + 1, index + 3);
-                AddTriangle(index + 2, index + 4, index + 3);
-                return;
-            }
-
-            if (diffY >= 0 || !prevIsBebel)
-            {
-                AddTriangle(index, index + 1, index + 2);
-                AddTriangle(index + 2, index + 1, index + 3);
-                return;
-            }
-
-            AddTriangle(index, index + 1, index + 2);
-            AddTriangle(index + 3, index, index + 2);
-        }
-
-        /// <summary>
-        /// 三角ポリゴンを追加する
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="c"></param>
-        private void AddTriangle(int a, int b, int c)
-        {
-            indices.Add(a);
-            indices.Add(b);
-            indices.Add(c);
         }
 
         private void RecalculateRange()
