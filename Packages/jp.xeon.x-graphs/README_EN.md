@@ -18,6 +18,21 @@ XGraphs is a collection of Unity uGUI components for drawing various types of ch
 2. In the Unity Editor, open **Window > Package Manager**, then select **Add package from disk...** from the `+` menu.
 3. Choose this package's `package.json` to add the `jp.xeon.xgraphs` package to your project.
 
+## Running the Sample
+This repository is itself a Unity project, so you can view the sample scene just by cloning it.
+
+1. Clone the repository.
+   ```
+   git clone https://github.com/AraiYuhki/XGraphs.git
+   ```
+2. In Unity Hub, choose **Add > Add project from disk** and select the cloned folder (see `ProjectSettings/ProjectVersion.txt` for the Unity version used for development; the first open takes a while to generate Library and import TextMeshPro).
+3. Open `Assets/Scenes/SampleScene.unity`.
+4. Press Play. `Assets/Scripts/GraphSample.cs` measures frame times (update / render / other) and log counts in real time and shows them as a line chart, stacked bar chart, bar chart, pie chart, and ring chart. The line chart also shows FPS guide lines (15 / 30 / 60 / 90 / 120 FPS) as markers.
+
+The sample code is a useful reference for initializing charts, updating data, and setting markers. The package itself lives in `Packages/jp.xeon.x-graphs/`.
+
+> To install it as a package via Git URL, use `https://github.com/AraiYuhki/XGraphs.git?path=/Packages/jp.xeon.x-graphs`.
+
 ## Bundled Components
 | Component | Description |
 | --- | --- |

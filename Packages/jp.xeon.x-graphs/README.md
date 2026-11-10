@@ -18,6 +18,21 @@ Unity の uGUI 上でさまざまな種類のグラフを描画できるコン�
 2. Unity エディタで **Window > Package Manager** を開き、左上の `+` メニューから **Add package from disk...** を選択します。
 3. 本パッケージの `package.json` を指定すると、`jp.xeon.xgraphs` パッケージがプロジェクトに追加されます。
 
+## サンプルの見方
+このリポジトリ自体が Unity プロジェクトになっており、クローンするだけでサンプルシーンを確認できます。
+
+1. リポジトリをクローンします。
+   ```
+   git clone https://github.com/AraiYuhki/XGraphs.git
+   ```
+2. Unity Hub の **Add > Add project from disk** でクローンしたフォルダを選択して開きます（開発に使用している Unity バージョンは `ProjectSettings/ProjectVersion.txt` を参照。初回は Library の生成と TextMeshPro のインポートに時間がかかります）。
+3. `Assets/Scenes/SampleScene.unity` を開きます。
+4. Play ボタンを押すと、`Assets/Scripts/GraphSample.cs` が現在のフレーム時間（Update / Render / その他）やログ件数をリアルタイムに集計し、折れ線グラフ・積み上げ棒グラフ・棒グラフ・円グラフ・リンググラフとして表示します。折れ線グラフには FPS の目安線（15 / 30 / 60 / 90 / 120FPS）がマーカーとして表示されます。
+
+サンプルの実装は、各グラフの初期化・データ更新・マーカー設定の参考になります。パッケージ本体は `Packages/jp.xeon.x-graphs/` にあります。
+
+> Git URL でパッケージとして導入する場合は、`https://github.com/AraiYuhki/XGraphs.git?path=/Packages/jp.xeon.x-graphs` を指定してください。
+
 ## 収録コンポーネント
 | コンポーネント | 概要 |
 | --- | --- |
