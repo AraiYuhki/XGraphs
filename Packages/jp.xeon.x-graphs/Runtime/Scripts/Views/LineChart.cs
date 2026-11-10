@@ -39,7 +39,9 @@ namespace Xeon.XGraph.View
 
         private List<UIVertex> vertices;
         private List<int> indices;
-        
+
+        public ScaleMarkerManager MarkerManager => markerManager;
+
         public void Initialize(MultiValueSeries series, List<ScaleMarkerData> markers = null)
         {
             rangeDirty = true;

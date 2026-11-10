@@ -48,6 +48,8 @@ namespace Xeon.XGraph.View
             }
         }
 
+        public ScaleMarkerManager MarkerManager => markerManager;
+
         public void Initialize(MultiValueSeries buffer, List<ScaleMarkerData> markers = null)
         {
             rangeDirty = true;
@@ -209,7 +211,7 @@ namespace Xeon.XGraph.View
             vh.AddTriangle(index + 0, index + 2, index + 1);
             vh.AddTriangle(index + 2, index + 3, index + 1);
         }
-        
+
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
