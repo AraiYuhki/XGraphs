@@ -6,17 +6,17 @@ Unity の uGUI 上でさまざまな種類のグラフを描画できるコン�
 - 棒グラフ、積み上げ棒グラフ、折れ線グラフ、円グラフ、ドーナツグラフ、レーダーチャートなどの uGUI コンポーネントを同梱しています。
 - `Series` や `MultiValueSeries` といったデータモデルにより、複数凡例・複数系列を柔軟に表現できます。
 - 配列、`List<T>`、`ObservableCollection<T>`、`CircularBuffer<T>` など多様なデータソースをアダプタ経由で取り込めます。
-- 棒グラフ向けのマーカー管理機能を備え、任意の値にラベル付きラインを配置できます。
+- 棒グラフ・積み上げ棒グラフ・折れ線グラフ向けのマーカー管理機能を備え、任意の値にラベル付きラインを配置できます。
 - マルチバリュー系列用のプロパティドロワーにより、インスペクタから凡例名・色・テストデータをまとめて編集できます。
 
 ## 動作環境
-- Unity 2022.3.6 以降（`package.json` の `unity` フィールドを参照）。
+- Unity 6000.0 以降（`package.json` の `unity` フィールドを参照）。
 - TextMeshPro を使用するマーカー UI が含まれるため、プロジェクトに TextMeshPro を導入しておくことを推奨します。
 
 ## インストール
 1. このリポジトリを任意の場所にクローン（または zip ダウンロード）します。
 2. Unity エディタで **Window > Package Manager** を開き、左上の `+` メニューから **Add package from disk...** を選択します。
-3. 本パッケージの `package.json` を指定すると、`jp.xeon.xgraphs` パッケージがプロジェクトに追加されます。
+3. 本パッケージの `package.json` を指定すると、`jp.xeon.x-graphs` パッケージがプロジェクトに追加されます。
 
 ## サンプルの見方
 このリポジトリ自体が Unity プロジェクトになっており、クローンするだけでサンプルシーンを確認できます。
@@ -39,7 +39,7 @@ Unity の uGUI 上でさまざまな種類のグラフを描画できるコン�
 | `BarChart` | 複数凡例の棒グラフ。値域（`RangeValue`）や棒間隔、マーカーを制御できます。 |
 | `StackedBarChart` | 凡例単位で積み上げ表示する棒グラフ。値域やマーカー設定を共有できます。 |
 | `LineChart` | マイター／ベベル結合に対応した折れ線グラフ。線幅やレンジ、複数系列をサポートします。 |
-| `PieChart` | 単一レイヤーの円グラフ。開始角度やセグメント分割を制御しつつ `SingleValueSeries` を描画します。 |
+| `PieChart` | 単一レイヤーの円グラフ。開始角度を設定でき、`SingleValueSeries` を束ねた `MultiLegendSeries` を描画します。 |
 | `RingChart` | 多層リング状グラフ。`LayeredSeries` を用いて各レイヤー／凡例を構成します。 |
 | `RaderChart` | 複数凡例に対応したレーダーチャート。開始角度と最大値を基準に正規化します。 |
 
@@ -55,7 +55,9 @@ Unity の uGUI 上でさまざまな種類のグラフを描画できるコン�
 2. スクリプトから `MultiValueSeries` を構築し、`BarChart.Initialize` または `SetSeries` に渡します。
 
 ```csharp
+using System.Collections.Generic;
 using UnityEngine;
+using Xeon.Common;
 using Xeon.XGraph.Model;
 using Xeon.XGraph.View;
 
@@ -67,17 +69,17 @@ public class BarChartSample : MonoBehaviour
     {
         var sales = new Series("売上", Color.cyan, new[] { 80f, 120f, 100f });
         var profit = new Series("利益", Color.green, new[] { 40f, 60f, 55f });
-        var multi = new MultiValueSeries(new System.Collections.Generic.List<Series> { sales, profit }, Color.white);
-        chart.Initialize(multi);
+        var multi = new MultiValueSeries(new List<Series> { sales, profit }, Color.white);
+        chart.Initialize(multi, new List<ScaleMarkerData> { new("目標", 100f) });
     }
 }
 ```
 
-3. 値域を調整したい場合は `chart.SetMin` / `SetMax`、マーカーを置きたい場合は `chart.MarkerManager.AddMarker` を呼び出します。
+3. 値域を調整したい場合は `chart.SetMin` / `SetMax` を呼び出します。マーカーは `Initialize` の第 2 引数で渡すほか、`LineChart` と `StackedBarChart` では `chart.MarkerManager.AddMarker` で後から追加できます。
 
 ## エディタサポート
 - `MultiValueSeries` プロパティは専用のプロパティドロワーによって折りたたみ表示、凡例数の増減、テストデータ編集などが可能です。
-- `MarkerManager` にはカスタムプロパティドロワーが同梱されており、インスペクタ上からマーカーリストを編集できます。
+- `ScaleMarkerManager` にはカスタムプロパティドロワーが同梱されており、インスペクタ上からマーカーリストを編集できます。
 
 ## ライセンス
 本パッケージのライセンス形態はリポジトリの管理者にお問い合わせください。
