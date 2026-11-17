@@ -108,6 +108,7 @@ Real-time charts show only the latest N values and drop the oldest ones every fr
 Adding values to a buffer with capacity 4 works like this:
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#eceff1", "primaryTextColor": "#000000", "primaryBorderColor": "#607d8b", "lineColor": "#455a64", "clusterBkg": "#f5f5f5", "clusterBorder": "#9e9e9e", "titleColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
 flowchart TB
     subgraph S1["① Empty　Count = 0"]
         direction LR
@@ -136,6 +137,14 @@ flowchart TB
     end
     S1 ~~~ S2 ~~~ S3 ~~~ S4 ~~~ S5
 
+
+    classDef default fill:#eceff1,stroke:#607d8b,color:#000
+    style S1 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style S2 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style S3 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style S4 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style S5 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    linkStyle default stroke:#455a64
     classDef startEnd fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
     classDef start fill:#bbdefb,stroke:#1565c0,stroke-width:3px,color:#000
     classDef endSlot fill:#ffe0b2,stroke:#ef6c00,stroke-width:3px,color:#000
@@ -154,6 +163,7 @@ flowchart TB
 Orange marks the nodes that were rewritten, and the gray dashed border marks where the update stopped.
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryColor": "#eceff1", "primaryTextColor": "#000000", "primaryBorderColor": "#607d8b", "lineColor": "#455a64", "clusterBkg": "#f5f5f5", "clusterBorder": "#9e9e9e", "titleColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
 flowchart TB
     subgraph T1["① Contents 30, 40, 50, 60 (array is [50, 60, 30, 40])"]
         direction TB
@@ -196,6 +206,12 @@ flowchart TB
     end
     T1 ~~~ T2 ~~~ T3
 
+
+    classDef default fill:#eceff1,stroke:#607d8b,color:#000
+    style T1 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style T2 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    style T3 fill:#f5f5f5,stroke:#9e9e9e,color:#000
+    linkStyle default stroke:#455a64
     classDef root fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
     classDef updated fill:#ffe0b2,stroke:#ef6c00,stroke-width:3px,color:#000
     classDef stopped fill:#eeeeee,stroke:#616161,stroke-width:3px,stroke-dasharray:5 5,color:#000
