@@ -47,7 +47,9 @@ namespace Xeon.XGraph.View
                 base.Color = value;
             }
         }
-        
+
+        public ScaleMarkerManager MarkerManager => markerManager;
+
         public void Initialize(MultiValueSeries buffer, List<ScaleMarkerData> markers = null)
         {
             rangeDirty = true;

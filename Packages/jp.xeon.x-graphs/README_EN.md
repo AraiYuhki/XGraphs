@@ -6,17 +6,17 @@ XGraphs is a collection of Unity uGUI components for drawing various types of ch
 - Includes uGUI components such as bar charts, stacked bar charts, line charts, pie charts, ring charts, and radar charts.
 - Flexible data models like `Series` and `MultiValueSeries` make it easy to represent multiple legends and datasets.
 - Supports diverse data sources via adapters for arrays, `List<T>`, `ObservableCollection<T>`, `CircularBuffer<T>`, and more.
-- Provides marker management for bar charts so you can place labeled lines at arbitrary values.
+- Provides marker management for bar, stacked bar, and line charts so you can place labeled lines at arbitrary values.
 - Custom property drawers for multi-value series let you edit legend names, colors, and sample data directly from the inspector.
 
 ## Requirements
-- Unity 2022.3.6 or newer (see the `unity` field in `package.json`).
+- Unity 6000.0 or newer (see the `unity` field in `package.json`).
 - TextMeshPro is recommended because certain marker UIs rely on it.
 
 ## Installation
 1. Clone (or download) this repository.
 2. In the Unity Editor, open **Window > Package Manager**, then select **Add package from disk...** from the `+` menu.
-3. Choose this package's `package.json` to add the `jp.xeon.xgraphs` package to your project.
+3. Choose this package's `package.json` to add the `jp.xeon.x-graphs` package to your project.
 
 ## Running the Sample
 This repository is itself a Unity project, so you can view the sample scene just by cloning it.
@@ -39,7 +39,7 @@ The sample code is a useful reference for initializing charts, updating data, an
 | `BarChart` | Multi-legend bar chart. Configure value ranges (`RangeValue`), bar spacing, and markers. |
 | `StackedBarChart` | Stacked bar chart that shares range and marker settings across legends. |
 | `LineChart` | Polyline chart that supports miter/bevel joins, custom widths, ranges, and multiple series. |
-| `PieChart` | Single-layer pie chart rendering a `SingleValueSeries` with configurable start angles and segment splitting. |
+| `PieChart` | Single-layer pie chart with a configurable start angle, rendering a `MultiLegendSeries` of `SingleValueSeries`. |
 | `RingChart` | Multi-layer ring chart built from `LayeredSeries` objects. |
 | `RaderChart` | Radar chart with support for multiple legends, normalized by start angle and maximum value. |
 
@@ -55,7 +55,9 @@ The sample code is a useful reference for initializing charts, updating data, an
 2. Construct a `MultiValueSeries` in your script and pass it to `BarChart.Initialize` or `SetSeries`.
 
 ```csharp
+using System.Collections.Generic;
 using UnityEngine;
+using Xeon.Common;
 using Xeon.XGraph.Model;
 using Xeon.XGraph.View;
 
@@ -67,17 +69,17 @@ public class BarChartSample : MonoBehaviour
     {
         var sales = new Series("Sales", Color.cyan, new[] { 80f, 120f, 100f });
         var profit = new Series("Profit", Color.green, new[] { 40f, 60f, 55f });
-        var multi = new MultiValueSeries(new System.Collections.Generic.List<Series> { sales, profit }, Color.white);
-        chart.Initialize(multi);
+        var multi = new MultiValueSeries(new List<Series> { sales, profit }, Color.white);
+        chart.Initialize(multi, new List<ScaleMarkerData> { new("Target", 100f) });
     }
 }
 ```
 
-3. Call `chart.SetMin` / `SetMax` to adjust the value range, or use `chart.MarkerManager.AddMarker` to insert markers.
+3. Call `chart.SetMin` / `SetMax` to adjust the value range. Pass markers as the second argument of `Initialize`, or add them later with `chart.MarkerManager.AddMarker`.
 
 ## Editor Tooling
 - The `MultiValueSeries` property drawer lets you fold sections, adjust legend counts, and edit sample data directly in the inspector.
-- `MarkerManager` ships with a custom property drawer so you can configure markers from the inspector.
+- `ScaleMarkerManager` ships with a custom property drawer so you can configure markers from the inspector.
 
 ## License
 Please contact the repository maintainer regarding the license for this package.
