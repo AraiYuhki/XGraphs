@@ -1,0 +1,17 @@
+{
+  "name": "jp.xeon.x-graphs",
+  "displayName": "XGraphs",
+  "version": "1.0.0",
+  "description": "Draw graphs in uGUI",
+  "author": {
+    "name": "Xeon",
+    "email": "xeon.lagunas@gmail.com"
+  },
+  "category": "GUI",
+  "keywords": [
+    "gui",
+    "utilities"
+  ],
+  "unity": "6000.0",
+  "unityRelease": "85f2"
+}
