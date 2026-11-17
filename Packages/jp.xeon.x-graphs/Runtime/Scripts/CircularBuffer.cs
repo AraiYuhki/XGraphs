@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 
 namespace Xeon.XGraph.Model
 {
@@ -26,25 +25,21 @@ namespace Xeon.XGraph.Model
         {
             get
             {
-                if (IsEmpty)
-                    throw new IndexOutOfRangeException($"インデックス {index} にアクセスできません。バッファが空です。");
-                if (index >= Count)
-                    throw new IndexOutOfRangeException($"インデックス {index} にアクセスできません。バッファの要素数は {Count} です。");
+                // uint にキャストして負のインデックスも 1 回の比較で弾く
+                if ((uint)index >= (uint)Count)
+                    ThrowIndexOutOfRange(index);
 
-                var actualIndex = (start + index) % Capacity;
-                return buffer[actualIndex];
+                return buffer[ToActualIndex(index)];
             }
 
             set
             {
-                if (IsEmpty)
-                    throw new IndexOutOfRangeException($"インデックス {index} にアクセスできません。バッファが空です。");
-                if (index >= Count)
-                    throw new IndexOutOfRangeException($"インデックス {index} にアクセスできません。バッファの要素数は {Count} です。");
+                if ((uint)index >= (uint)Count)
+                    ThrowIndexOutOfRange(index);
 
-                var actualIndex = (start + index) % Capacity;
+                var actualIndex = ToActualIndex(index);
                 var oldItem = buffer[actualIndex];
-                buffer[actualIndex] = value;
+                WriteSlot(actualIndex, value);
 
                 // 要素の置換を通知
                 CollectionChanged?.Invoke(this,
@@ -53,6 +48,9 @@ namespace Xeon.XGraph.Model
             }
         }
 
+        /// <summary>
+        /// items で初期化する。items が容量を超える場合は、末尾側（新しい側）の要素を残す
+        /// </summary>
         public CircularBuffer(int capacity, T[] items)
         {
             if (capacity < 1)
@@ -63,7 +61,7 @@ namespace Xeon.XGraph.Model
                 return;
 
             var copyCount = Math.Min(items.Length, capacity);
-            Array.Copy(items, buffer, copyCount);
+            Array.Copy(items, items.Length - copyCount, buffer, 0, copyCount);
 
             Count = copyCount;
             start = 0;
@@ -74,17 +72,10 @@ namespace Xeon.XGraph.Model
         {
             if (capacity < 1)
                 throw new ArgumentException("容量は1以上でなければなりません。", nameof(capacity));
-            if (fill)
-            {
-                buffer = Enumerable.Repeat<T>(default, capacity).ToArray();
-                Count = Capacity;
-                end = buffer.Length / Capacity;
-            }
-            else
-            {
-                buffer = new T[capacity];
-                Count = 0;
-            }
+
+            // 配列は既定値で初期化されるので、fill のときは要素数を満杯にするだけでよい
+            buffer = new T[capacity];
+            Count = fill ? capacity : 0;
             start = 0;
             end = 0;
         }
@@ -92,8 +83,7 @@ namespace Xeon.XGraph.Model
         public virtual void Clear()
         {
             // バッファ全体をクリア
-            for (var i = 0; i < Capacity; i++)
-                buffer[i] = default;
+            Array.Clear(buffer, 0, buffer.Length);
 
             Count = start = end = 0;
 
@@ -121,29 +111,15 @@ namespace Xeon.XGraph.Model
         }
 
         /// <summary>
-        /// 末尾に要素を追加（満杯の場合は先頭を上書き）
+        /// 末尾に要素を追加（満杯の場合は先頭を捨ててから追加）
         /// </summary>
         public virtual void PushBack(T item)
         {
+            // 満杯のときは先頭の削除と末尾への追加を順に通知し、各通知の時点で状態と内容が一致するようにする
             if (IsFull)
-            {
-                // 満杯のときは古い要素を上書きする
-                var oldItem = buffer[end];
-                buffer[end] = item;
+                RemoveFront();
 
-                // end を進め、start も追従させる
-                Increment(ref end);
-                start = end;
-
-                // 古い要素が置き換わったことを通知（論理インデックス0が上書きされた扱い）
-                CollectionChanged?.Invoke(this,
-                    new NotifyCollectionChangedEventArgs(
-                        NotifyCollectionChangedAction.Replace, item, oldItem, 0));
-                return;
-            }
-
-            // 通常の追加処理
-            buffer[end] = item;
+            WriteSlot(end, item);
             var logicalIndex = Count;
             Increment(ref end);
             Count++;
@@ -155,27 +131,15 @@ namespace Xeon.XGraph.Model
         }
 
         /// <summary>
-        /// 先頭に要素を追加（満杯の場合は末尾を上書き）
+        /// 先頭に要素を追加（満杯の場合は末尾を捨ててから追加）
         /// </summary>
         public virtual void PushFront(T item)
         {
-            Decrement(ref start);
-
             if (IsFull)
-            {
-                // 満杯時は最後尾の要素を上書き
-                var oldItem = buffer[start];
-                buffer[start] = item;
-                end = start;
+                RemoveBack();
 
-                // 最後の要素が置き換わったことを通知
-                CollectionChanged?.Invoke(this,
-                    new NotifyCollectionChangedEventArgs(
-                        NotifyCollectionChangedAction.Replace, item, oldItem, Count - 1));
-                return;
-            }
-
-            buffer[start] = item;
+            Decrement(ref start);
+            WriteSlot(start, item);
             Count++;
 
             // 要素が先頭に追加されたことを通知
@@ -190,18 +154,7 @@ namespace Xeon.XGraph.Model
         public virtual void PopBack()
         {
             ThrowIfEmpty("バッファが空のため、要素を削除できません。");
-
-            var lastIndex = (end == 0) ? Capacity - 1 : end - 1;
-            var removedItem = buffer[lastIndex];
-
-            Decrement(ref end);
-            buffer[end] = default;
-            Count--;
-
-            // 要素削除を通知（論理インデックス Count は削除前の最後の要素位置）
-            CollectionChanged?.Invoke(this,
-                new NotifyCollectionChangedEventArgs(
-                    NotifyCollectionChangedAction.Remove, removedItem, Count));
+            RemoveBack();
         }
 
         /// <summary>
@@ -210,11 +163,47 @@ namespace Xeon.XGraph.Model
         public virtual void PopFront()
         {
             ThrowIfEmpty("バッファが空のため、要素を削除できません。");
+            RemoveFront();
+        }
 
-            var removedItem = buffer[start];
-            buffer[start] = default;
+        /// <summary>
+        /// 配列上の slot に値を書き込んだ直後に呼ばれる。派生クラスで集計値の更新に使う
+        /// </summary>
+        protected virtual void OnSlotWritten(int slot, T value) { }
+
+        /// <summary>
+        /// 配列上の slot の要素が取り除かれた直後に呼ばれる。派生クラスで集計値の更新に使う
+        /// </summary>
+        protected virtual void OnSlotRemoved(int slot) { }
+
+        private void WriteSlot(int slot, T value)
+        {
+            buffer[slot] = value;
+            OnSlotWritten(slot, value);
+        }
+
+        private void RemoveBack()
+        {
+            Decrement(ref end);
+            var removedItem = buffer[end];
+            buffer[end] = default;
+            Count--;
+            OnSlotRemoved(end);
+
+            // 要素削除を通知（論理インデックス Count は削除前の最後の要素位置）
+            CollectionChanged?.Invoke(this,
+                new NotifyCollectionChangedEventArgs(
+                    NotifyCollectionChangedAction.Remove, removedItem, Count));
+        }
+
+        private void RemoveFront()
+        {
+            var removedSlot = start;
+            var removedItem = buffer[removedSlot];
+            buffer[removedSlot] = default;
             Increment(ref start);
             Count--;
+            OnSlotRemoved(removedSlot);
 
             // 先頭要素削除を通知
             CollectionChanged?.Invoke(this,
@@ -229,6 +218,26 @@ namespace Xeon.XGraph.Model
         {
             if (!IsEmpty) return;
             throw new InvalidOperationException(message);
+        }
+
+        /// <summary>
+        /// インデックス範囲外の例外を送出（インデクサをインライン化しやすくするため分離）
+        /// </summary>
+        private void ThrowIndexOutOfRange(int index)
+        {
+            if (IsEmpty)
+                throw new IndexOutOfRangeException($"インデックス {index} にアクセスできません。バッファが空です。");
+            throw new IndexOutOfRangeException($"インデックス {index} にアクセスできません。バッファの要素数は {Count} です。");
+        }
+
+        /// <summary>
+        /// 論理インデックスを配列上の位置に変換
+        /// start &lt; Capacity かつ index &lt; Capacity なので、剰余ではなく1回の減算で折り返せる
+        /// </summary>
+        private int ToActualIndex(int index)
+        {
+            var actualIndex = start + index;
+            return actualIndex >= buffer.Length ? actualIndex - buffer.Length : actualIndex;
         }
 
         /// <summary>
@@ -251,15 +260,49 @@ namespace Xeon.XGraph.Model
             index--;
         }
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            for (var index = 0; index < Count; index++)
-            {
-                var actualIndex = (start + index) % Capacity;
-                yield return buffer[actualIndex];
-            }
-        }
+        /// <summary>
+        /// foreach で直接回したときにアロケーションが起きないよう struct の列挙子を返す
+        /// </summary>
+        public Enumerator GetEnumerator() => new(this);
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public struct Enumerator : IEnumerator<T>
+        {
+            private readonly CircularBuffer<T> owner;
+            private int index;
+            private T current;
+
+            internal Enumerator(CircularBuffer<T> owner)
+            {
+                this.owner = owner;
+                index = 0;
+                current = default;
+            }
+
+            public T Current => current;
+
+            object IEnumerator.Current => current;
+
+            public bool MoveNext()
+            {
+                if (index >= owner.Count)
+                    return false;
+
+                current = owner.buffer[owner.ToActualIndex(index)];
+                index++;
+                return true;
+            }
+
+            public void Reset()
+            {
+                index = 0;
+                current = default;
+            }
+
+            public void Dispose() { }
+        }
     }
 }

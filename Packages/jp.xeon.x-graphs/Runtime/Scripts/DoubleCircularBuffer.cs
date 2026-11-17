@@ -1,101 +1,64 @@
 using System;
-using System.Collections.Generic;
 
 namespace Xeon.XGraph.Model
 {
     public class DoubleCircularBuffer : CircularBuffer<double>
     {
-        // SortedSetは重複値を保持できないため、値ごとの個数をDictionaryで管理し、
-        // 個数が0になったときだけSortedSetから取り除くマルチセットとして扱う
-        private readonly Dictionary<double, int> counts = new();
-        private readonly SortedSet<double> sortedValues = new();
+        // 配列上の位置ごとの値を葉に持つ最大値のセグメント木（tree[1] が全体の最大値）
+        // 葉は tree[Capacity + slot]。固定長なので値を出し入れしてもアロケーションが発生しない
+        // 空き位置は NaN で表す。Max2 は NaN を最小として扱うので、NaN 以外の値があればそちらが選ばれる
+        private readonly double[] tree;
 
         public DoubleCircularBuffer(int capacity) : base(capacity)
         {
+            tree = CreateTree(capacity);
         }
 
         public DoubleCircularBuffer(int capacity, double[] items) : base(capacity, items)
         {
+            tree = CreateTree(capacity);
             for (var index = 0; index < Count; index++)
-                AddValue(base[index]);
-        }
-
-        public double Max => sortedValues.Count == 0 ? 0.0 : sortedValues.Max;
-
-        public override double this[int index]
-        {
-            get => base[index];
-            set
             {
-                if (IsEmpty)
-                    throw new IndexOutOfRangeException($"Cannot access index {index}. Buffer is empty.");
-                if (index >= Count)
-                    throw new IndexOutOfRangeException($"Cannot access index {index}. Buffer size is {Count}.");
-
-                RemoveValue(base[index]);
-                AddValue(value);
-                base[index] = value;
+                var slot = start + index;
+                if (slot >= capacity)
+                    slot -= capacity;
+                UpdateLeaf(slot, buffer[slot]);
             }
         }
+
+        public double Max => IsEmpty ? 0.0 : tree[1];
 
         public override void Clear()
         {
-            counts.Clear();
-            sortedValues.Clear();
+            Array.Fill(tree, double.NaN);
             base.Clear();
         }
 
-        public override void PushBack(double item)
+        protected override void OnSlotWritten(int slot, double value) => UpdateLeaf(slot, value);
+
+        protected override void OnSlotRemoved(int slot) => UpdateLeaf(slot, double.NaN);
+
+        private static double[] CreateTree(int capacity)
         {
-            if (IsFull)
-                RemoveValue(Front());
-            AddValue(item);
-            base.PushBack(item);
+            var tree = new double[capacity * 2];
+            Array.Fill(tree, double.NaN);
+            return tree;
         }
 
-        public override void PushFront(double item)
+        private void UpdateLeaf(int slot, double value)
         {
-            if (IsFull)
-                RemoveValue(Back());
-            AddValue(item);
-            base.PushFront(item);
-        }
-
-        public override void PopBack()
-        {
-            if (!IsEmpty)
-                RemoveValue(Back());
-            base.PopBack();
-        }
-
-        public override void PopFront()
-        {
-            if (!IsEmpty)
-                RemoveValue(Front());
-            base.PopFront();
-        }
-
-        private void AddValue(double value)
-        {
-            counts.TryGetValue(value, out var count);
-            counts[value] = count + 1;
-            if (count == 0)
-                sortedValues.Add(value);
-        }
-
-        private void RemoveValue(double value)
-        {
-            if (!counts.TryGetValue(value, out var count))
-                return;
-            if (count <= 1)
+            var index = Capacity + slot;
+            tree[index] = value;
+            for (index >>= 1; index >= 1; index >>= 1)
             {
-                counts.Remove(value);
-                sortedValues.Remove(value);
-            }
-            else
-            {
-                counts[value] = count - 1;
+                var max = Max2(tree[index * 2], tree[index * 2 + 1]);
+                // 親の値が変わらなければ、それより上も変わらない
+                if (max.Equals(tree[index]))
+                    break;
+                tree[index] = max;
             }
         }
+
+        private static double Max2(double a, double b) => a >= b || double.IsNaN(b) ? a : b;
     }
 }
