@@ -2,6 +2,8 @@
 
 [日本語](README.md)
 
+![XGraphs sample scene](Documentation/images/XGraphsSampleDemo.gif)
+
 A Unity package for drawing bar, line, pie, and other charts on uGUI. It provides data-series models, adapters for common data sources, and inspector tooling so you can build charts quickly both at runtime and in the editor.
 
 This repository is a Unity project. The package itself lives in [`Packages/jp.xeon.x-graphs/`](Packages/jp.xeon.x-graphs/), alongside a sample scene.

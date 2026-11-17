@@ -2,6 +2,8 @@
 
 [English](README_EN.md)
 
+![XGraphs のサンプルシーン](Documentation/images/XGraphsSampleDemo.gif)
+
 Unity の uGUI 上で棒グラフ・折れ線グラフ・円グラフなどを描画するためのパッケージです。系列データのモデルとデータソース用アダプタ、インスペクタ拡張を備えており、ランタイムでもエディタでもグラフを素早く構築できます。
 
 このリポジトリは Unity プロジェクトになっており、パッケージ本体は [`Packages/jp.xeon.x-graphs/`](Packages/jp.xeon.x-graphs/) にあります。サンプルシーンもあわせて確認できます。
