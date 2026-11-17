@@ -75,7 +75,7 @@ public class BarChartSample : MonoBehaviour
 }
 ```
 
-3. 値域を調整したい場合は `chart.SetMin` / `SetMax` を呼び出します。マーカーは `Initialize` の第 2 引数で渡すほか、`LineChart` と `StackedBarChart` では `chart.MarkerManager.AddMarker` で後から追加できます。
+3. 値域を調整したい場合は `chart.SetMin` / `SetMax` を呼び出します。マーカーは `Initialize` の第 2 引数で渡すほか、`chart.MarkerManager.AddMarker` で後から追加できます。
 
 ## エディタサポート
 - `MultiValueSeries` プロパティは専用のプロパティドロワーによって折りたたみ表示、凡例数の増減、テストデータ編集などが可能です。

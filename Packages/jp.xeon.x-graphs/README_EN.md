@@ -75,7 +75,7 @@ public class BarChartSample : MonoBehaviour
 }
 ```
 
-3. Call `chart.SetMin` / `SetMax` to adjust the value range. Pass markers as the second argument of `Initialize`; on `LineChart` and `StackedBarChart` you can also add them later with `chart.MarkerManager.AddMarker`.
+3. Call `chart.SetMin` / `SetMax` to adjust the value range. Pass markers as the second argument of `Initialize`, or add them later with `chart.MarkerManager.AddMarker`.
 
 ## Editor Tooling
 - The `MultiValueSeries` property drawer lets you fold sections, adjust legend counts, and edit sample data directly in the inspector.
